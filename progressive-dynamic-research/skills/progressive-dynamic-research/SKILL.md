@@ -207,7 +207,7 @@ mechanics so you don't rediscover them:
   calls) across many scenarios — args validation, funnel shape + return contract,
   model tiering, kill-quorum math, per-tier web wiring (FIT never fetches),
   FIT-width cap, and the budget gate firing on the *delta*. Each asserts an
-  invariant whose failure would burn real tokens. Run **`node --test scripts/`**
+  invariant whose failure would burn real tokens. Run **`node --test scripts/*.test.mjs`**
   after any edit and before spending on a real run — it catches structural bugs the
   way `node --check` catches syntax ones. (`scripts/harness-lib.mjs` is the shared
   runner; `scripts/stub-harness.mjs` is a quick single-scenario visual check.)

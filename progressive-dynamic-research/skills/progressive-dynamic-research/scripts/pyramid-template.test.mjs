@@ -1,6 +1,6 @@
 // Unit tests for pyramid-template.js — catch the "dumb errors that cost lost
 // tokens" before a real run spends money. Zero deps (node:test + node:assert).
-// Run:  node --test scripts/   (from the skill dir), or  node --test <this file>
+// Run:  node --test scripts/*.test.mjs   (from the skill dir), or  node --test <this file>
 //
 // Each test asserts a structural invariant whose failure would burn tokens:
 // the budget gate not firing, FIT looping (web on the wrong tier), kill-quorum
