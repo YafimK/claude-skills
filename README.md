@@ -19,7 +19,8 @@ progressive-dynamic-research/          # plugin: progressive-dynamic-research
   decisions. Cheap models discover breadth; an adversarial tier kills weak
   options; the strong model only synthesizes the few survivors. Ships a guidance
   skill, a canonical dynamic-workflow template, and per-tier JSON schemas +
-  harness gotchas.
+  harness gotchas. **For how the funnel works — stages, concepts, one diagram —
+  see the [skill README](progressive-dynamic-research/skills/progressive-dynamic-research/README.md).**
 
 > **Note on names:** the *marketplace* is `progressive-research` and the *plugin*
 > inside it is `progressive-dynamic-research`. The install string is always
