@@ -1,0 +1,32 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Dependencies / build
+node_modules/
+*.log
+
+# Local Claude Code config (machine-specific, may contain local paths)
+.claude/settings.local.json
+.claude/*.local.json
+
+# Secrets / credentials — never commit
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+*.credentials
+secrets.*
+**/secrets/
+
+# Workflow / run artifacts (may contain research inputs)
+*-workspace/
+*.tmp
+/tmp/

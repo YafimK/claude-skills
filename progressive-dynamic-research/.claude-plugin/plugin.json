@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "progressive-dynamic-research",
+  "displayName": "Progressive Dynamic Research",
+  "version": "1.1.0",
+  "description": "Multi-tier agent research funnel for research and architecture decisions. Cheap models discover breadth; an adversarial tier kills weak options; the strong model synthesizes only the survivors. Ships a guidance skill, a canonical dynamic-workflow template, and per-tier JSON schemas.",
+  "author": {
+    "name": "YafimK"
+  },
+  "homepage": "https://github.com/YafimK/claude-skills",
+  "repository": "https://github.com/YafimK/claude-skills",
+  "keywords": ["research", "workflow", "subagents", "orchestration", "decision", "architecture"],
+  "license": "MIT"
+}

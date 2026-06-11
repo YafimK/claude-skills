@@ -1,0 +1,50 @@
+# CI: run the zero-dep node:test suite + a syntax check on the workflow templates.
+#
+# Supply-chain hardening (this is deliberate — see each comment):
+#  - Actions are pinned to a full COMMIT SHA, never a mutable @vN tag. A compromised
+#    action that re-points its tag (the tj-actions/changed-files class of attack)
+#    cannot affect us, because a SHA is immutable.
+#  - Only first-party (GitHub-owned) actions are used. No third-party action = no
+#    third-party trust boundary.
+#  - Top-level least-privilege token: contents:read only. The default GITHUB_TOKEN
+#    is otherwise read-write and is the prime target of token-theft attacks.
+#  - Triggers are push + pull_request, NOT pull_request_target (which runs with the
+#    base repo's secrets in an attacker-controllable context — the actual footgun
+#    behind most cross-repo CI breaches).
+#  - persist-credentials:false so no token is left on disk for later steps.
+#  - The job uses NO secrets at all; it only runs the test suite. Nothing to steal.
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege for the whole workflow. Override per-job only if ever needed.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # actions/checkout v6.0.3 — pinned to commit SHA
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+
+      # actions/setup-node v6.4.0 — pinned to commit SHA
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 22
+
+      - name: Syntax-check the workflow templates
+        working-directory: progressive-dynamic-research/skills/progressive-dynamic-research
+        run: |
+          node --check scripts/pyramid-template.js
+          node --check scripts/claim-verification-template.js
+
+      - name: Run the test suite
+        working-directory: progressive-dynamic-research/skills/progressive-dynamic-research
+        run: node --test scripts/pyramid-template.test.mjs

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace-manifest.json",
+  "name": "progressive-research",
+  "owner": {
+    "name": "YafimK"
+  },
+  "description": "Reusable Claude Code skills for agent orchestration and research.",
+  "plugins": [
+    {
+      "name": "progressive-dynamic-research",
+      "source": "./progressive-dynamic-research",
+      "description": "Multi-tier agent research funnel: cheap models discover breadth, an adversarial tier kills weak options, the strong model synthesizes only the survivors. Guidance + dynamic-workflow template + schemas.",
+      "category": "research",
+      "keywords": ["research", "workflow", "subagents", "orchestration", "decision", "architecture"]
+    }
+  ]
+}
