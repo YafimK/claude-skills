@@ -59,22 +59,3 @@ recommendation*, with the strong model touching only the final handful.
 - **Convergence is a decision.** Workflows make re-running free, which tempts you
   to never close a set. Once a phase filters, it stays closed unless *new evidence*
   reopens it.
-
-## What's in this skill
-
-| File | What it is |
-|------|------------|
-| [`SKILL.md`](SKILL.md) | The operational guide: when to fan out (vs. just reason), budget mechanics, the gotchas, and how to author a run |
-| [`scripts/pyramid-template.js`](scripts/pyramid-template.js) | The canonical **option-selection** funnel — args-driven, don't edit it; invoke with `Workflow({ scriptPath, args })` |
-| [`scripts/claim-verification-template.js`](scripts/claim-verification-template.js) | A variant for *"verify these N questions and cite the facts"* — DISCOVER → web VERIFY → cited SYNTH, no FIT tier |
-| [`scripts/pyramid-template.test.mjs`](scripts/pyramid-template.test.mjs) | A \$0, zero-dep `node:test` suite (16 tests) that catches token-wasting bugs before a real run. `node --test scripts/*.test.mjs` |
-| [`scripts/harness-lib.mjs`](scripts/harness-lib.mjs) | Shared test runner (mocks `agent`/`parallel`/`budget` — no LLM calls) |
-| [`references/schemas.md`](references/schemas.md) | JSON schemas per tier |
-| [`references/harness-notes.md`](references/harness-notes.md) | Dynamic-workflow harness gotchas (the `pall()` fix, budget guard, web-grounded sizing) |
-
-## The one bug everyone hits
-
-`await parallel(x.map(...)).filter(...)` binds `.filter` to the **Promise**, not the
-array → `.filter is not a function`. Always route through the `pall()` helper and
-assign in two steps; run `node --check` before launching. The template already does
-this correctly.
