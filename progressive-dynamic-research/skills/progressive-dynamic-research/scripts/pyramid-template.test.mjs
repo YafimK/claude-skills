@@ -303,6 +303,25 @@ test('a hybrid that FAILS re-KILL never reaches APEX', async () => {
   assert.equal(result.funnel.survivors, 2, 'survivors stay at the 2 originals; the dead hybrid is NOT counted')
 })
 
+test('return.compose traces what the composer proposed and how it fared at re-KILL', async () => {
+  // hybridize mode, hybrid survives: result.compose.proposed lists it, reKill marks survived:true
+  const { result, error } = await runWorkflow(
+    { ...BASE_ARGS, angles: [{ key: 'k', lens: 'one' }], evolve: true, webTiers: [], killVotes: 1, killThreshold: 1 },
+    { fakeFor: composeFake }
+  )
+  assert.equal(error, null)
+  assert.ok(result.compose, 'compose trace present when evolve fired')
+  assert.ok(result.compose.proposed.some(h => /Hybrid AB/.test(h.name)), 'proposed hybrid is named in the trace')
+  assert.ok(result.compose.reKill.some(v => /Hybrid AB/.test(v.name) && v.survived === true),
+    're-KILL verdict records the hybrid as survived')
+})
+
+test('return.compose is null when evolve never fired', async () => {
+  const { result, error } = await runWorkflow({ ...BASE_ARGS })   // evolve OFF by default
+  assert.equal(error, null)
+  assert.equal(result.compose, null, 'no compose trace without evolve')
+})
+
 test('pre-compose gate DEGRADES (skip hybrid) — never aborts synthesis', async () => {
   // Tune hard so the run clears the pre-kill gate but trips pre-compose:
   // base(1)+fit(2)=12k at pre-kill (passes), +kill(2)=20k at pre-compose (trips).

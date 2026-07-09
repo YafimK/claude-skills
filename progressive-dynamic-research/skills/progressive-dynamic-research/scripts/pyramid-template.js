@@ -265,6 +265,10 @@ const HYBRID_SCHEMA = {
   } } },
 }
 
+// Every hybrid COMPOSE proposes (both modes), captured for the return trace so a
+// reviewer sees what was invented, not just the final counts. reVetHybrids fills it.
+const proposedHybrids = []
+
 // Re-vet a composed hybrid list through the SAME KILL quorum, fold the verdicts
 // into verdictsRaw, and append any that survive to `survivors`. Shared by both
 // compose modes so a hybrid always earns its place exactly as an original did.
@@ -283,7 +287,9 @@ async function reVetHybrids(hybrids) {
     return { ...h, name: String(h.name).slice(0, 120), oneLine: ol }
   })
   log('Compose: ' + bounded.length + ' hybrid(s) -> re-vetting through KILL')
+  proposedHybrids.push(...bounded)   // record what COMPOSE proposed, for the return trace
   const hybridVerdicts = await killVote(bounded, 'kill-hybrid')
+  for (const v of hybridVerdicts) v.hybrid = true   // tag so the return can separate re-KILL from the first KILL
   verdictsRaw.push(...hybridVerdicts)
   const hybridSurvivors = hybridVerdicts.filter(v => v.survives)
   survivors = survivors.concat(hybridSurvivors)
@@ -380,6 +386,13 @@ if (survivors.length === 0) {
     },
     degraded: degraded.map(v => ({ name: v.name, votes: v.votes, votesRequested: v.votesRequested })),
     rejected: refuted.map(v => ({ name: v.name, refutes: v.refutes, fatalFlaws: v.fatalFlaws })),
+    // In compensating mode COMPOSE may have run and produced hybrids that all failed
+    // re-KILL — surface that trace so the dead-end is explainable, not just "0 survivors".
+    compose: proposedHybrids.length ? {
+      proposed: proposedHybrids.map(h => ({ name: h.name, oneLine: h.oneLine, combines: h.combines })),
+      reKill: verdictsRaw.filter(v => v.hybrid).map(v => ({
+        name: v.name, survived: v.survives, refutes: v.refutes, fatalFlaws: v.fatalFlaws })),
+    } : null,
   }
 }
 
@@ -463,4 +476,11 @@ return {
   // are reported separately so a caller never mistakes "could not evaluate" for "refuted".
   rejected: refuted.map(v => ({ name: v.name, refutes: v.refutes, fatalFlaws: v.fatalFlaws })),
   degraded: degradedList.map(v => ({ name: v.name, votes: v.votes, votesRequested: v.votesRequested })),
+  // COMPOSE trace (present only when evolve fired): what the composer proposed and how
+  // each hybrid fared at re-KILL — so a reviewer can inspect the tier, not just the counts.
+  compose: proposedHybrids.length ? {
+    proposed: proposedHybrids.map(h => ({ name: h.name, oneLine: h.oneLine, combines: h.combines })),
+    reKill: verdictsRaw.filter(v => v.hybrid).map(v => ({
+      name: v.name, survived: v.survives, refutes: v.refutes, fatalFlaws: v.fatalFlaws })),
+  } : null,
 }
