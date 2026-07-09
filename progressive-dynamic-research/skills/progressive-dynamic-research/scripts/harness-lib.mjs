@@ -45,6 +45,10 @@ function defaultFakeFor(schema, label, opts) {
   if (req.includes('verdict') && req.includes('gaps')) {
     return { verdict: 'gaps-found', gaps: ['an angle was not explored'], suggestedAngles: ['some-missing-angle'] }
   }
+  if (req.includes('hybrids')) {
+    // COMPOSE tier: propose one hybrid combining the survivors' strengths
+    return { hybrids: [{ name: 'Hybrid AB', oneLine: 'combines strengths of two survivors', combines: ['Option Alpha', 'Option Beta'] }] }
+  }
   return {}
 }
 
@@ -61,7 +65,7 @@ export async function runWorkflow(args, opts = {}) {
     if (typeof prompt !== 'string' || !prompt.length) throw new Error('agent() got non-string prompt for ' + o.label)
     spent += SPEND_PER_AGENT
     const usesWeb = /WebSearch|WebFetch/.test(prompt) && !/do NOT use web|do NOT use WebSearch/i.test(prompt)
-    calls.push({ label: o.label || '(none)', model: o.model || '(inherit)', phase: o.phase, hasSchema: !!o.schema, usesWeb })
+    calls.push({ label: o.label || '(none)', model: o.model || '(inherit)', phase: o.phase, hasSchema: !!o.schema, usesWeb, prompt })
     return fake(o.schema, o.label || '')
   }
   const parallel = async (thunks) => {

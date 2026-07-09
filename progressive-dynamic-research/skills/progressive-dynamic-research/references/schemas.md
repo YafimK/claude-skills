@@ -12,6 +12,7 @@ mismatch.
 - Fit / triage (FIT)
 - Verdict (KILL)
 - Deep-dive (APEX inputs)
+- Hybrid (COMPOSE / EVOLVE — optional)
 - Triage-only variant (known candidate set)
 
 ---
@@ -82,6 +83,24 @@ property set to the domain.
     "phaseFit":  { "type": "string" },
     "sources":   { "type": "array", "items": { "type": "string" } }
   }
+}
+```
+
+## Hybrid — COMPOSE / EVOLVE tier (optional)
+Opt-in (`evolve:true`). After KILL, propose hybrids combining ≥2 survivors'
+strengths. Keep it thin like BASE — each hybrid then **re-enters KILL** (the
+Verdict schema above) and must survive before APEX sees it. An empty list is a
+valid answer: do not force a hybrid where no genuine synthesis exists.
+```json
+{
+  "type": "object", "required": ["hybrids"],
+  "properties": { "hybrids": { "type": "array", "items": {
+    "type": "object", "required": ["name", "oneLine"],
+    "properties": {
+      "name":     { "type": "string" },
+      "oneLine":  { "type": "string", "description": "one-sentence what-it-is" },
+      "combines": { "type": "array", "items": { "type": "string" }, "description": "names of the survivors this hybrid draws from" }
+    } } } }
 }
 ```
 

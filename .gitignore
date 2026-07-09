@@ -30,3 +30,9 @@ secrets.*
 *-workspace/
 *.tmp
 /tmp/
+
+# Git worktrees checked out inside the repo (registered separately, not tracked)
+worktrees/
+
+# Playwright MCP session artifacts (local browser-driving cruft)
+.playwright-mcp/

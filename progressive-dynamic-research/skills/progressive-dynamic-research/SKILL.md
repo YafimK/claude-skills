@@ -112,6 +112,11 @@ and say so in the plan instead of proposing your own.
   Size for fetch cost or the run dies behind a gate.
 - **Opus-heavy** (deep-dives on the strong model): opus runs cost ~5× a haiku run —
   scale the cap up accordingly (a 3×opus-deepdive + verify + synth run was ~210k).
+- **`evolve:true` (the optional COMPOSE step):** budget for one extra sonnet
+  composer plus a *second* KILL pass over the hybrids — and if KILL is
+  web-grounded, that re-vet inherits the same fetch cost. Add roughly one
+  KILL-tier's worth of headroom; if the cap is tight, the pre-compose gate simply
+  degrades and you synthesize the originals.
 - **Wide tiers that *loop* (the sneaky one):** cost ≈ width × turns-per-agent ×
   context-per-turn. Measured: a 45-agent FIT triage tier booked ~900k tokens by
   **looping ~8 turns each** (re-reading fetched content every turn) — not the web
@@ -166,6 +171,46 @@ Map the funnel to the task; don't run all five tiers mechanically.
    never sees the junk — only the handful that survived. Output a recommendation,
    a scored comparison, and an explicit *rejected-with-reasons* list.
 
+The return object carries `recommendation`, `coverage`, `funnel`, and two distinct
+lists: **`rejected`** (options an adversary actually *refuted* — with refute counts
+and flaws) and **`degraded`** (options whose KILL votes *crashed below quorum* — the
+verdict is unknown, NOT a refutation). Never read a degraded option as rejected: a
+degraded result means "could not evaluate — re-run with more budget", not "this is
+bad". If every option ends up degraded the run stops with a `could not evaluate`
+message rather than a false `everything was refuted`.
+
+**Optional — COMPOSE / EVOLVE (between KILL and APEX).** Opt in (`evolve:true`)
+to insert one cheap (sonnet) composer with **two modes**, picked by how many
+survived KILL:
+
+- **Hybridize (≥2 survivors).** The best answer is sometimes a *hybrid* of two —
+  not either alone. The composer proposes hybrid options combining the survivors'
+  strengths.
+- **Compensating controls (<2 survivors, but some were refuted).** The failure
+  that motivated this: a multi-constraint problem where *no single option*
+  satisfies everything, so KILL nukes them all — yet a real answer exists as
+  "best base option **+ controls that cover its residual flaws**." Those controls
+  are usually **not other candidates** — the KILL tier already *named* them inside
+  each rejected option's `fatalFlaws` (e.g. "the only way to satisfy X is a Y").
+  So instead of dead-ending at `null`, the composer reads the refuted set + its
+  flaws and proposes a base+compensating-controls hybrid. *(Without `evolve`, a
+  <2-survivor outcome stays a hard stop — the funnel remains a strict
+  down-selector; this rescue is opt-in.)*
+
+The non-negotiable for **both** modes: **COMPOSE generates, re-KILL judges.** The
+composer only *invents* a hybrid — it is not an adversary, so it cannot be trusted to
+approve its own creation. Each hybrid therefore **re-enters the KILL tier** and must
+survive the same adversarial quorum before APEX sees it; an un-vetted hybrid would
+smuggle a confirmation bias straight into synthesis (APEX's invariant is that it only
+ever sees options an adversary tried to kill and failed). A hybrid the *same* adversary
+re-kills is a **true finding** (some constraint sets have no composite that survives
+review), not a bug. The composer defaults to the **strong model** (`composeModel`,
+default opus) because inventing a good hybrid — especially "base + the mitigation each
+flaw names" — is real synthesis, not cheap legwork; re-KILL stays the cheaper
+adversarial backstop, and re-KILL can only *reject* a weak hybrid, never *upgrade* one.
+The pre-compose gate *degrades* (skip the enhancement, synthesize whatever survived)
+rather than aborting. Default off; skip it when one clear winner already dominates.
+
 ## Non-negotiables that make it work
 
 - **Structured (schema) output, always.** Force each agent to return validated
@@ -196,11 +241,16 @@ mechanics so you don't rediscover them:
   dedup-in-code, per-tier schemas, a multi-vote KILL quorum, a coverage critic,
   and a delta-based budget guard. It is **args-driven**: don't edit the file —
   invoke it with `Workflow({ scriptPath, args: { problem, priorities, angles,
-  webTiers, killVotes, maxFit, maxKill, hard, warn } })`. `webTiers` is a
+  webTiers, killVotes, maxFit, maxKill, evolve, composeModel, hard, warn } })`.
+  `composeModel` sets the COMPOSE tier's model (default `opus` — compose is
+  generative synthesis where quality matters; re-KILL stays the sonnet backstop;
+  set `sonnet` for a cheaper compose). `webTiers` is a
   per-tier list — `['base','kill']` lets BASE fetch for discovery *recall*
   (single-pass — it must not loop) and KILL fetch to *verify* facts, while FIT
   (the wide, loop-prone tier) never fetches. `webGrounded:true` is a back-compat
-  alias for `['kill']`. Use when the task is
+  alias for `['kill']`. `evolve:true` adds the optional two-mode COMPOSE step above
+  (hybridize ≥2 survivors, or compose base+compensating-controls when <2 survive —
+  both re-vetted through KILL). Use when the task is
   "choose among N candidate approaches". Read the header block for the full args.
 - **`scripts/pyramid-template.test.mjs`** — the **$0 test suite** (`node:test`, no
   deps). Runs the workflow body under mocked `agent`/`parallel`/`budget` (no LLM
@@ -219,8 +269,17 @@ mechanics so you don't rediscover them:
   5–10× reasoning tiers) and a **per-bucket verify cap** (a global slice silently
   starves some questions → false "evidence gaps" at the apex). See
   `references/harness-notes.md` → "Web-grounded tiers" and "Per-bucket caps".
+- **`scripts/evolve-eval.js`** (dev tool, not shipped behavior) — answers "does
+  `evolve:true` actually beat leaving it off?". For each problem it runs
+  BASE→FIT→KILL **once**, then branches over the *same* survivors: arm A = APEX
+  only, arm B = COMPOSE+re-KILL→APEX — so any delta isolates the COMPOSE tier with
+  no discovery confound. A blind, order-swapped judge panel scores A vs B against
+  the priorities; it reports evolve win-rate, mean token delta, and the free
+  in-run signal (did a hybrid survive re-KILL and coincide with the win). Its
+  deterministic plumbing is unit-tested (`evolve-eval-lib.test.mjs`) and its wiring
+  smoke-tested (`evolve-eval-smoke.mjs`). Prove it on ONE problem before scaling.
 - **`references/schemas.md`** — the JSON schemas for each tier (candidate, fit,
-  verdict, deep-dive) and a minimal triage variant.
+  verdict, deep-dive, hybrid) and a minimal triage variant.
 - **`references/harness-notes.md`** — runtime gotchas of the dynamic-workflow
   harness: the `pall()` fix for `parallel()`, `pipeline()` vs `parallel()`
   (barrier) choice, no `Date.now()`/`Math.random()`, no apostrophes in prompts,

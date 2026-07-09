@@ -36,6 +36,21 @@ recommendation*, with the strong model touching only the final handful.
 | **CRITIC** | 1 haiku agent | Ask "what did we miss?" — an unexplored angle, an untested discriminator, an over-narrowed set | Builds the coverage guarantee *into* the funnel |
 | **APEX** | 1 strong agent (inherits the main model, e.g. opus) | Synthesize over survivors only: recommendation, scored comparison, rejected-with-reasons | The expensive model never sees the junk |
 
+**Optional insert — COMPOSE/EVOLVE** (between KILL and APEX, `evolve:true`): a
+strong-model (`composeModel`, default opus) composer with two modes. When **≥2
+survivors** remain it proposes *hybrids* of their strengths. When **<2 survive but
+some were refuted** it instead composes "best base option **+ compensating controls**"
+— reading the mitigations the KILL tier named inside the refuted options' flaws — so
+an all-refuted, multi-constraint problem produces an answer instead of dead-ending.
+The rule is **COMPOSE generates, re-KILL judges**: the composer only *invents* a
+hybrid, so every hybrid **re-enters KILL** before APEX can see it and must earn its
+place through the same quorum (a hybrid the same adversary re-kills is a *true
+finding*, not a bug). Compose defaults to the strong model because inventing a good
+hybrid is real synthesis; re-KILL is the cheaper backstop and can only reject a weak
+hybrid, never upgrade one. The gate here *degrades* (skip the enhancement, synthesize
+whatever survived); it never starves synthesis. Without `evolve`, a <2-survivor
+outcome stays a hard stop. Default off.
+
 ## The concepts that make it work
 
 - **Tier the models by where quality matters.** Legwork is cheap (haiku/sonnet);

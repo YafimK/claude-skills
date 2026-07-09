@@ -58,7 +58,7 @@ skill directory:
 
 ```
 cd progressive-dynamic-research/skills/progressive-dynamic-research
-node --test scripts/pyramid-template.test.mjs   # 16 tests, ~80ms
+node --test scripts/pyramid-template.test.mjs   # 38 tests, ~100ms
 node --check scripts/pyramid-template.js         # syntax gate before launch
 ```
 
